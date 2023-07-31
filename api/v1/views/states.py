@@ -1,37 +1,37 @@
 #!/usr/bin/python3
-""" Module containing views for amenity-related API requests
+"""Module containing views for State objects 
 """
 
 from api.v1.views import app_views
 from models import storage
 from flask import jsonify, abort, request
 
-
-@app_views.route('/amenities', methods=['GET', 'POST'], strict_slashes=False)
-@app_views.route('/amenities/<amenity_id>', methods=['GET', 'DELETE', 'PUT'],
+@app_views.route('/states', methods=['GET', 'POST'], strict_slashes=False)
+@app_views.route('/states/<state_id>', methods=['GET', 'DELETE', 'PUT'],
                  strict_slashes=False)
-def amenity_methods(amenity_id=None):
-    """Handle requests to API for amentities
+def states_get(state_id=None):
+    """Manipulate State object by state_id, or all objects if
+    state_id is None
     """
-    from models.amenity import Amenity
-    amenities = storage.all(Amenity)
+    from models.state import State
+    states = storage.all(State)
 
     # GET REQUESTS
     if request.method == 'GET':
-        if not amenity_id:  # if no id specified, return all
-            return jsonify([obj.to_dict() for obj in amenities.values()])
+        if not state_id:  # if no, state id specified, return all
+            return jsonify([obj.to_dict() for obj in states.values()])
 
-        key = 'Amenity.' + amenity_id
+        key = 'State.' + state_id
         try:  # if obj exists in dictionary, convert from obj -> dict -> json
-            return jsonify(amenities[key].to_dict())
+            return jsonify(states[key].to_dict())
         except KeyError:
-            abort(404)  # Amenity with amenity_id does not exist
+            abort(404)  # if State of state_id does not exist
 
     # DELETE REQUESTS
     elif request.method == 'DELETE':
         try:
-            key = 'Amenity.' + amenity_id
-            storage.delete(amenities[key])
+            key = 'State.' + state_id
+            storage.delete(states[key])
             storage.save()
             return jsonify({}), 200
         except:
@@ -45,20 +45,20 @@ def amenity_methods(amenity_id=None):
         else:
             abort(400, 'Not a JSON')
 
-        # instantiate, store, and return new Amenity object
+        # instantiate, store, and return new State object
         if 'name' in body_request:
-            new_amenity = Amenity(**body_request)
-            storage.new(new_amenity)
+            new_state = State(**body_request)
+            storage.new(new_state)
             storage.save()
-            return jsonify(new_amenity.to_dict()), 201
+            return jsonify(new_state.to_dict()), 201
         else:  # if request does not contain required attribute
             abort(400, 'Missing name')
 
     # PUT REQUESTS
     elif request.method == 'PUT':
-        key = 'Amenity.' + amenity_id
+        key = 'State.' + state_id
         try:
-            amenity = amenities[key]
+            state = states[key]
 
             # convert JSON request to dict
             if request.is_json:
@@ -68,10 +68,11 @@ def amenity_methods(amenity_id=None):
 
             for key, val in body_request.items():
                 if key != 'id' and key != 'created_at' and key != 'updated_at':
-                    setattr(amenity, key, val)
+                    setattr(state, key, val)
 
             storage.save()
-            return jsonify(amenity.to_dict()), 200
+            return jsonify(state.to_dict()), 200
+
         except KeyError:
             abort(404)
 
